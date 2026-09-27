@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import User  from "../models/User.js"
 import jwt from "jsonwebtoken"
+import { OAuth2Client } from "google-auth-library"
 
 
 export async function register(req, res) {
@@ -81,4 +82,51 @@ export async function login(req, res) {
 
 export async function getMe(req, res) {
     res.status(200).json({ message: "You are authorized", userId: req.userId});
+}
+
+export async function googleAuth(req, res) {
+    try {
+        const { credential } = req.body;
+
+        if(!credential) {
+            return res.status(400).json({ message: "Missing Google credential"})
+        }
+        if (!process.env.JWT_SECRET || !process.env.GOOGLE_CLIENT_ID) {
+            return res.status(500).json({ message: "Server aunthentication is not configured"})
+        }
+
+        const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const { sub, email, email_verified, name } = ticket.getPayload();
+        if (!email || !email_verified) {
+           return res.status(401).json({ message: "Google email is not verified" });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        let user = await User.findOne({ $or: [{ googleId: sub }, { email: normalizedEmail }]});
+        
+
+        if(!user) {
+            user = await User.create({
+                email: normalizedEmail,
+                fullname: name || normalizedEmail.split("@")[0],
+                googleId: sub,
+            })
+        }
+        const token = jwt.sign(
+                { userId: user._id },        // payload — what's encoded in the token
+                process.env.JWT_SECRET,      // signing secret
+                { expiresIn: "7d" }          // token becomes invalid after 7 days
+                );
+        return res.status(200).json({  token, id: user._id, fullname: user.fullname, email: user.email });
+    } catch (error) {
+        console.log("error.message:", error)
+        return res.status(500).json({ message: "Internal server error "})
+    }
 }

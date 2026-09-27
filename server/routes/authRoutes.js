@@ -1,11 +1,12 @@
 import express from "express"
-import { getMe, login, register } from "../controllers/authController.js";
+import { getMe, googleAuth, login, register } from "../controllers/authController.js";
 import { protectRoute } from "../middleware/authMiddleare.js";
 
 const router = express.Router()
 
 router.post("/register", register);
 router.post("/login", login)
+router.post("/google", googleAuth)
 router.get("/me", protectRoute, getMe)
 
 export default router;
