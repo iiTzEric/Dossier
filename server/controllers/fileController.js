@@ -87,3 +87,30 @@ export async function confirmUpload(req, res) {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 }
+
+export async function getFiles(req, res) {
+    const { folder } = req.query;
+
+    try {
+        const files = await File.find({
+            owner: req.userId,
+            folder: folder || null,
+        }).sort({ name: 1 });
+
+        return res.status(200).json(
+            files.map((f) => ({
+                id: f._id,
+                name: f.name,
+                size: f.size,
+                mimeType: f.mimeType,
+                folder: f.folder,
+            }))
+        );
+    } catch (error) {
+        if (error.name === "CastError") {
+            return res.status(400).json({ message: "Invalid folder id" });
+        }
+        console.log("Error fetching files", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
