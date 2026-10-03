@@ -6,9 +6,10 @@ import './App.css'
 import { useQuery } from '@tanstack/react-query'
 import { fetchHealth } from './api/health'
 import { fetchFolders } from './api/folders'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createFolder } from './api/folders';
 
 function App() {
-  const [count, setCount] = useState(0)
   const { data, error, isLoading } = useQuery({
     queryKey: ['health'],
     queryFn: fetchHealth
@@ -18,6 +19,15 @@ function App() {
     queryKey: ['folders'],
     queryFn: fetchFolders
   });
+
+  const queryClient = useQueryClient();
+
+const mutation = useMutation({
+  mutationFn: createFolder,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['folders'] });
+  },
+});
 
   return (
     <>
@@ -36,12 +46,8 @@ function App() {
             Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
           </p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+        <button onClick={() => mutation.mutate({ name: 'Test Folder ' + Date.now() })}>
+          Create Test Folder
         </button>
       </section>
 
