@@ -3,9 +3,15 @@ import heroImg from './assets/hero.png'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import './App.css'
+import { useQuery } from '@tanstack/react-query'
+import { fetchHealth } from './api/health'
 
 function App() {
   const [count, setCount] = useState(0)
+  const { data, error, isLoading } = useQuery({
+    queryKey: ['health'],
+    queryFn: fetchHealth
+  })
 
   return (
     <>
@@ -17,6 +23,9 @@ function App() {
         </div>
         <div>
           <h1>Get started</h1>
+          {isLoading && <p>Loading...</p>}
+          {error && <p>Error: {error.message}</p>}
+          {data && <p>{JSON.stringify(data)}</p>}
           <p>
             Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
           </p>
