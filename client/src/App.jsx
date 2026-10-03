@@ -5,13 +5,19 @@ import viteLogo from './assets/vite.svg'
 import './App.css'
 import { useQuery } from '@tanstack/react-query'
 import { fetchHealth } from './api/health'
+import { fetchFolders } from './api/folders'
 
 function App() {
   const [count, setCount] = useState(0)
   const { data, error, isLoading } = useQuery({
     queryKey: ['health'],
     queryFn: fetchHealth
-  })
+  });
+
+  const { data: foldersData, error: foldersError, isLoading: foldersIsLoading } = useQuery({
+    queryKey: ['folders'],
+    queryFn: fetchFolders
+  });
 
   return (
     <>
@@ -47,6 +53,9 @@ function App() {
             <use href="/icons.svg#documentation-icon"></use>
           </svg>
           <h2>Documentation</h2>
+          {foldersIsLoading && <p>Loading folders...</p>}
+          {foldersError && <p>Folders error: {foldersError.message}</p>}
+          {foldersData && <p>{JSON.stringify(foldersData)}</p>}
           <p>Your questions, answered</p>
           <ul>
             <li>
